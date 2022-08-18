@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "../../../drawing/LightFX.h"
 #include "../../../sprites.h"
 #include "../../RideData.h"
 #include "../../ShopItem.h"
@@ -57,5 +58,7 @@ constexpr const RideTypeDescriptor MonorailRTD =
     )),
     SET_FIELD(ColourPreview, { SPR_RIDE_DESIGN_PREVIEW_MONORAIL_TRACK, SPR_RIDE_DESIGN_PREVIEW_MONORAIL_SUPPORTS }),
     SET_FIELD(ColourKey, RideColourKey::Ride),
+    SET_FIELD(Name, "monorail"),
+    SET_FIELD(LightFXAddLightsMagicVehicle, LightFxAddLightsMagicVehicle_Monorail),
 };
 // clang-format on

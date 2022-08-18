@@ -222,7 +222,7 @@ namespace Config
             model->invisible_trees = reader->GetBoolean("invisible_trees", false);
             model->invisible_scenery = reader->GetBoolean("invisible_scenery", false);
             model->invisible_paths = reader->GetBoolean("invisible_paths", false);
-            model->invisible_supports = reader->GetBoolean("invisible_supports", false);
+            model->invisible_supports = reader->GetBoolean("invisible_supports", true);
 
             model->last_version_check_time = reader->GetInt64("last_version_check_time", 0);
         }
@@ -755,7 +755,8 @@ namespace Config
             return false;
         }
         int32_t exit_status = Platform::Execute(
-            String::Format("%s '%s' --exclude-temp --output-dir '%s'", path.c_str(), installerPath.c_str(), targetPath.c_str()),
+            String::StdFormat(
+                "%s '%s' --exclude-temp --output-dir '%s'", path.c_str(), installerPath.c_str(), targetPath.c_str()),
             &output);
         log_info("Exit status %d", exit_status);
         return exit_status == 0;

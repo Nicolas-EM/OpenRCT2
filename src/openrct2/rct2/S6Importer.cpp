@@ -91,6 +91,7 @@ namespace RCT2
         S6Data _s6{};
         uint8_t _gameVersion = 0;
         bool _isSV7 = false;
+        bool _isScenario = false;
         OpenRCT2::BitSet<Limits::MaxRidesInPark> _isFlatRide{};
         ObjectEntryIndex _pathToSurfaceMap[16];
         ObjectEntryIndex _pathToQueueSurfaceMap[16];
@@ -205,6 +206,7 @@ namespace RCT2
                 chunkReader.ReadChunk(&_s6.next_free_tile_element_pointer_index, 3048816);
             }
 
+            _isScenario = isScenario;
             _s6Path = path;
 
             return ParkLoadResult(GetRequiredObjects());
@@ -500,6 +502,7 @@ namespace RCT2
             park.Name = GetUserString(_s6.park_name);
 
             FixLandOwnership();
+            FixAyersRockScenario();
 
             research_determine_first_of_type();
             UpdateConsolidatedPatrolAreas();
@@ -568,6 +571,60 @@ namespace RCT2
                         { 88, 110 },
                     },
                     OWNERSHIP_AVAILABLE, true);
+            }
+        }
+
+        void FixAyersRockScenario() const
+        {
+            if (!_isScenario || !String::Equals(_s6.scenario_filename, "Australasia - Ayers Rock.SC6"))
+                return;
+
+            TileCoordsXY tilesToUncovered[] = {
+                { 123, 59 }, { 123, 60 }, { 123, 61 }, { 118, 69 }, { 118, 70 }, { 118, 71 },
+                { 118, 72 }, { 118, 73 }, { 112, 79 }, { 112, 80 }, { 112, 81 }, { 112, 82 },
+            };
+            for (const auto& tile : tilesToUncovered)
+            {
+                auto* tileElement = map_get_first_element_at(tile);
+                if (tileElement == nullptr)
+                    continue;
+
+                do
+                {
+                    if (tileElement->GetType() != TileElementType::Track)
+                        continue;
+
+                    auto* trackElement = tileElement->AsTrack();
+                    if (trackElement->GetTrackType() != TrackElemType::FlatCovered)
+                        continue;
+
+                    trackElement->SetTrackType(TrackElemType::Flat);
+                } while (!(tileElement++)->IsLastForTile());
+            }
+
+            TileCoordsXY tilesToCovered[] = {
+                { 123, 83 },
+                { 123, 84 },
+                { 123, 85 },
+                { 123, 86 },
+            };
+            for (const auto& tile : tilesToCovered)
+            {
+                auto* tileElement = map_get_first_element_at(tile);
+                if (tileElement == nullptr)
+                    continue;
+
+                do
+                {
+                    if (tileElement->GetType() != TileElementType::Track)
+                        continue;
+
+                    auto* trackElement = tileElement->AsTrack();
+                    if (trackElement->GetTrackType() != TrackElemType::Flat)
+                        continue;
+
+                    trackElement->SetTrackType(TrackElemType::FlatCovered);
+                } while (!(tileElement++)->IsLastForTile());
             }
         }
 
@@ -1690,7 +1747,7 @@ namespace RCT2
 
         void ImportEntity(const RCT12SpriteBase& src);
 
-        std::string GetUserString(rct_string_id stringId)
+        std::string GetUserString(StringId stringId)
         {
             const auto originalString = _s6.custom_strings[(stringId - USER_STRING_START) % 1024];
             auto originalStringView = std::string_view(
@@ -1815,7 +1872,9 @@ namespace RCT2
         dst->acceleration = src->acceleration;
         dst->ride = RideId::FromUnderlying(src->ride);
         dst->vehicle_type = src->vehicle_type;
-        dst->colours = src->colours;
+        dst->colours.Body = src->colours.body_colour;
+        dst->colours.Trim = src->colours.trim_colour;
+        dst->colours.Tertiary = src->colours_extended;
         dst->track_progress = src->track_progress;
         dst->TrackLocation = { src->track_x, src->track_y, src->track_z };
         if (src->boat_location.IsNull() || static_cast<RideMode>(ride.mode) != RideMode::BoatHire
@@ -1902,7 +1961,6 @@ namespace RCT2
         dst->mini_golf_current_animation = MiniGolfAnimation(src->mini_golf_current_animation);
         dst->mini_golf_flags = src->mini_golf_flags;
         dst->ride_subtype = RCTEntryIndexToOpenRCT2EntryIndex(src->ride_subtype);
-        dst->colours_extended = src->colours_extended;
         dst->seat_rotation = src->seat_rotation;
         dst->target_seat_rotation = src->target_seat_rotation;
         dst->IsCrashedVehicle = src->flags & RCT12_SPRITE_FLAGS_IS_CRASHED_VEHICLE_SPRITE;
@@ -2178,7 +2236,7 @@ std::unique_ptr<IParkImporter> ParkImporter::CreateS6(IObjectRepository& objectR
     return std::make_unique<RCT2::S6Importer>(objectRepository);
 }
 
-static void show_error(uint8_t errorType, rct_string_id errorStringId)
+static void show_error(uint8_t errorType, StringId errorStringId)
 {
     if (errorType == ERROR_TYPE_GENERIC)
     {

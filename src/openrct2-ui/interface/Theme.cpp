@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2020 OpenRCT2 developers
+ * Copyright (c) 2014-2022 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -96,7 +96,7 @@ struct WindowThemeDesc
 {
     rct_windowclass WindowClass;
     const utf8* WindowClassSZ;
-    rct_string_id WindowName;
+    StringId WindowName;
     uint8_t NumColours;
     WindowTheme DefaultTheme;
 };
@@ -232,7 +232,7 @@ const UITheme PredefinedThemeRCT2 = UITheme::CreatePredefined("*RCT2", Predefine
 struct PredefinedTheme
 {
     const UITheme* Theme;
-    rct_string_id Name;
+    StringId Name;
 };
 
 static constexpr const PredefinedTheme PredefinedThemes[] = {
@@ -817,11 +817,10 @@ void ThemeDuplicate(const utf8* name)
     auto newPath = ThemeManager::GetThemeFileName(name);
 
     // Copy the theme, save it and then load it back in
-    UITheme* newTheme = new UITheme(*ThemeManager::CurrentTheme);
+    auto newTheme = std::make_unique<UITheme>(*ThemeManager::CurrentTheme);
     newTheme->Name = name;
     newTheme->Flags &= ~UITHEME_FLAG_PREDEFINED;
     newTheme->WriteToFile(newPath);
-    delete newTheme;
 
     ThemeManager::LoadTheme(newPath);
 
@@ -860,7 +859,7 @@ uint8_t ThemeDescGetNumColours(rct_windowclass wc)
     return desc->NumColours;
 }
 
-rct_string_id ThemeDescGetName(rct_windowclass wc)
+StringId ThemeDescGetName(rct_windowclass wc)
 {
     const WindowThemeDesc* desc = GetWindowThemeDescriptor(wc);
     if (desc == nullptr)

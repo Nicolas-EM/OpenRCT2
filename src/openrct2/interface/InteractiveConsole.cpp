@@ -166,7 +166,7 @@ static int32_t cc_rides(InteractiveConsole& console, const arguments_t& argv)
                     for (int32_t i = 0; i < static_cast<uint8_t>(RideMode::Count); i++)
                     {
                         char mode_name[128] = { 0 };
-                        rct_string_id mode_string_id = RideModeNames[i];
+                        StringId mode_string_id = RideModeNames[i];
                         format_string(mode_name, 128, mode_string_id, nullptr);
                         console.WriteFormatLine("%02d - %s", i, mode_name);
                     }
@@ -467,7 +467,7 @@ static int32_t cc_staff(InteractiveConsole& console, const arguments_t& argv)
                 for (int32_t i = 0; i < static_cast<uint8_t>(EntertainerCostume::Count); i++)
                 {
                     char costume_name[128] = { 0 };
-                    rct_string_id costume = StaffCostumeNames[i];
+                    StringId costume = StaffCostumeNames[i];
                     format_string(costume_name, 128, STR_DROPDOWN_MENU_LABEL, &costume);
                     // That's a terrible hack here. Costume names include inline sprites
                     // that don't work well with the console, so manually skip past them.
@@ -1148,7 +1148,7 @@ static int32_t cc_set(InteractiveConsole& console, const arguments_t& argv)
             }
             else if (newRotation != currentRotation && mainWindow != nullptr)
             {
-                window_rotate_camera(mainWindow, newRotation - currentRotation);
+                window_rotate_camera(*mainWindow, newRotation - currentRotation);
             }
             console.Execute("get current_rotation");
         }
@@ -1227,13 +1227,12 @@ static int32_t cc_load_object(InteractiveConsole& console, const arguments_t& ar
         {
             // Automatically research the ride so it's supported by the game.
             rct_ride_entry* rideEntry;
-            int32_t rideType;
 
             rideEntry = get_ride_entry(groupIndex);
 
             for (int32_t j = 0; j < RCT2::ObjectLimits::MaxRideTypesPerRideEntry; j++)
             {
-                rideType = rideEntry->ride_type[j];
+                auto rideType = rideEntry->ride_type[j];
                 if (rideType != RIDE_TYPE_NULL)
                 {
                     ResearchCategory category = GetRideTypeDescriptor(rideType).GetResearchCategory();
@@ -2146,8 +2145,5 @@ void InteractiveConsole::WriteFormatLine(const char* format, ...)
     va_start(list, format);
     auto buffer = String::Format_VA(format, list);
     va_end(list);
-
-    auto s = std::string(buffer);
-    std::free(buffer);
-    WriteLine(s);
+    WriteLine(buffer);
 }
